@@ -1,0 +1,86 @@
+{
+  "project_info": {
+    "project_number": "959676338394",
+    "firebase_url": "https://physics-ar.firebaseio.com",
+    "project_id": "physics-ar",
+    "storage_bucket": "physics-ar.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959676338394:android:ed04b813aebc3fc8",
+        "android_client_info": {
+          "package_name": "com.adam.will.physicsar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "959676338394-fnd48v8esv9l5jpj894vrm12nno9agad.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.adam.will.physicsar",
+            "certificate_hash": "c8be7e7e831ca3d871be9ae75187ec7e54b13242"
+          }
+        },
+        {
+          "client_id": "959676338394-6fj2hffu615kimvpa0k6ng9bd2rd8p2c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSOfgB6OAg5rl6W8MeypLKwCYGpsw1_s4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "959676338394-6fj2hffu615kimvpa0k6ng9bd2rd8p2c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959676338394:android:99fedcb618fe84b4",
+        "android_client_info": {
+          "package_name": "com.emu.adam.will.physicsar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "959676338394-6fj2hffu615kimvpa0k6ng9bd2rd8p2c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSOfgB6OAg5rl6W8MeypLKwCYGpsw1_s4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

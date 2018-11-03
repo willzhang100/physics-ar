@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">PhysicsAR</string>
+    <string name="host_btn_label">Host</string>
+    <string name="join_btn_label">Join</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="resolve_dialog_title">Resolve Anchor</string>
+    <string name="resolve_button_text">Resolve</string>
+</resources>
