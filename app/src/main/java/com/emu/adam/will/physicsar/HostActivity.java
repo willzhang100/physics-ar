@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Config;
@@ -39,6 +40,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +74,7 @@ public class HostActivity extends AppCompatActivity {
 
     private Button exit;
     private Button toggleField;
+    private TextView room;
 
     private int num;
 
@@ -88,6 +91,7 @@ public class HostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_host);
 
+        room = (Button) findViewById(R.id.room);
         exit = (Button) findViewById(R.id.exit);
         exit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,6 +138,7 @@ public class HostActivity extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 groupReference = reference.child(String.valueOf(dataSnapshot.getChildrenCount()));
+                room.setText(String.valueOf(dataSnapshot.getChildrenCount()));
                 groupReference.setValue("Created");
                 groupReference.child("particles").setValue("Created");
 
