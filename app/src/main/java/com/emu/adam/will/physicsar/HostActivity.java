@@ -1,5 +1,6 @@
 package com.emu.adam.will.physicsar;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
@@ -9,6 +10,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Config;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
 public class HostActivity extends AppCompatActivity {
@@ -57,12 +61,17 @@ public class HostActivity extends AppCompatActivity {
     private float yCoord = -1;
     private float xCoord = -1;
     private List<Particle> particles;
+    private float[] boundingBox;
+    private Arrow[][][] arrows;
     private Session session;
     private Map<Node, Particle> map;
 
     private FirebaseDatabase database;
     private DatabaseReference reference;
     private DatabaseReference groupReference;
+
+    private Button exit;
+    private Button toggleField;
 
     private int num;
 
@@ -79,7 +88,42 @@ public class HostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_host);
 
+        exit = (Button) findViewById(R.id.exit);
+        exit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(HostActivity.this, MainActivity.class);
+                startActivity(intent);
+            }
+        });
+        toggleField = (Button) findViewById(R.id.toggleField);
+        toggleField.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (arrows[0][0][0].arrow.isEnabled()) {
+                    for (int x = 0; x < arrows.length; x++) {
+                        for (int y = 0; y < arrows[0].length; y++) {
+                            for (int z = 0; z < arrows[0][0].length; z++) {
+                                arrows[x][y][z].arrow.setEnabled(false);
+                            }
+                        }
+                    }
+                }
+                else {
+                    for (int x = 0; x < arrows.length; x++) {
+                        for (int y = 0; y < arrows[0].length; y++) {
+                            for (int z = 0; z < arrows[0][0].length; z++) {
+                                arrows[x][y][z].arrow.setEnabled(true);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         map = new HashMap<>();
+        arrows = new Arrow[4][4][4];
+        boundingBox = new float[6];
 
         database = FirebaseDatabase.getInstance();
         reference = database.getReference();
@@ -212,6 +256,15 @@ public class HostActivity extends AppCompatActivity {
                                     "Hosting cloud anchor ...", Snackbar.LENGTH_LONG)
                                     .show();
                         }
+
+
+
+
+
+
+
+
+
                         return;
                     }
 
@@ -241,13 +294,23 @@ public class HostActivity extends AppCompatActivity {
 
                     particles.add(new Particle(sphere, 0f, particleControlsRenderable, arrow, redSphereRenderable, whiteSphereRenderable, blueSphereRenderable, num));
                     map.put(sphere, particles.get(particles.size()-1));
-                    DatabaseReference newParticle = groupReference.child("particles").child(String.valueOf(num));
-                    newParticle.child("c").setValue("0");
+
                     Vector3 tempPos = sphere.getLocalPosition();
-                    newParticle.child("x").setValue(tempPos.x);
-                    newParticle.child("y").setValue(tempPos.y);
-                    newParticle.child("z").setValue(tempPos.z);
+                    Map<String, Object> attributes = new HashMap<>();
+                    attributes.put("c","0");
+                    attributes.put("x",tempPos.x);
+                    attributes.put("y",tempPos.y);
+                    attributes.put("z",tempPos.z);
+                    groupReference.child("particles").child(String.valueOf(num)).updateChildren(attributes);
+//                    newParticle.child("c").setValue("0");
+
+//                    newParticle.child("x").setValue(tempPos.x);
+//                    newParticle.child("y").setValue(tempPos.y);
+//                    newParticle.child("z").setValue(tempPos.z);
                     num++;
+
+                    updateBoundingBox(particles.get(particles.size()-1));
+                    updatePosition(particles.get(particles.size()-1));
 
 
 
@@ -276,6 +339,8 @@ public class HostActivity extends AppCompatActivity {
                                             sphere.setLocalPosition(new Vector3(pos.x, pos.y - .05f, pos.z));
                                             calculateNetForces(particles);
                                             groupReference.child("particles").child(String.valueOf(particle.getNum())).child("y").setValue(String.valueOf(pos.y - .05f));
+                                            updateBoundingBox(particle);
+                                            updatePosition(particle);
                                             return true;
                                         }
                                         if (differenceY < -100) {
@@ -283,6 +348,8 @@ public class HostActivity extends AppCompatActivity {
                                             sphere.setLocalPosition(new Vector3(pos.x, pos.y + .05f, pos.z));
                                             calculateNetForces(particles);
                                             groupReference.child("particles").child(String.valueOf(particle.getNum())).child("y").setValue(String.valueOf(pos.y + .05f));
+                                            updateBoundingBox(particle);
+                                            updatePosition(particle);
                                             return true;
                                         }
                                     }
@@ -298,6 +365,7 @@ public class HostActivity extends AppCompatActivity {
                                             p.setCharge(p.getCharge() - 5);
                                             calculateNetForces(particles);
                                             groupReference.child("particles").child(String.valueOf(particle.getNum())).child("c").setValue(String.valueOf(p.getCharge()));
+                                            updateDirection(p);
 
                                             return true;
                                         }
@@ -305,8 +373,8 @@ public class HostActivity extends AppCompatActivity {
                                         if (differenceX > 100) {
                                             p.setCharge(p.getCharge() + 5);
                                             calculateNetForces(particles);
-
                                             groupReference.child("particles").child(String.valueOf(particle.getNum())).child("c").setValue(String.valueOf(p.getCharge()));
+                                            updateDirection(p);
 
                                             return true;
                                         }
@@ -348,6 +416,20 @@ public class HostActivity extends AppCompatActivity {
                                     .show();
                             appAnchorState = AppAnchorState.HOSTED;
                             groupReference.child("anchor").setValue(anchor.getCloudAnchorId());
+
+
+                            for (int x = 0; x < arrows.length; x++) {
+                                for (int y = 0; y < arrows[0].length; y++) {
+                                    for (int z = 0; z < arrows[0][0].length; z++) {
+                                        Node arrowNode = new Node();
+                                        arrowNode.setParent(anchorNode);
+                                        arrowNode.setRenderable(arrowRenderable);
+                                        arrowNode.setLocalPosition(new Vector3(0f, 0f, 0f));
+                                        arrowNode.setLocalScale(new Vector3(1, 1, 0.005f * 1));     //TODO FIX SCALE
+                                        arrows[x][y][z] = new Arrow(arrowNode);
+                                    }
+                                }
+                            }
                             //sendPost();
                             //update();
                         }
@@ -387,6 +469,25 @@ public class HostActivity extends AppCompatActivity {
         }
     }
 
+    private void updateBoundingBox(Particle p) {
+        Vector3 pos = p.getParticle().getLocalPosition();
+        if (pos.x < boundingBox[0])
+            boundingBox[0] = pos.x;
+        else if (pos.x > boundingBox[1])
+            boundingBox[1] = pos.x;
+
+        if (pos.y < boundingBox[2])
+            boundingBox[2] = pos.y;
+        else if (pos.y > boundingBox[3])
+            boundingBox[3] = pos.y;
+
+        if (pos.z < boundingBox[4])
+            boundingBox[4] = pos.z;
+        else if (pos.z > boundingBox[5])
+            boundingBox[5] = pos.z;
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -410,5 +511,29 @@ public class HostActivity extends AppCompatActivity {
             }
         });
         thread.start();
+    }
+
+    private void updatePosition(Particle p) {
+        float xGap = (boundingBox[1]+.5f - boundingBox[0]) / 4.0f;
+        float yGap = (boundingBox[3]+.5f - boundingBox[2]) / 4.0f;
+        float zGap = (boundingBox[5]+.5f - boundingBox[4]) / 4.0f;
+        for (int x = 0; x < arrows.length; x++) {
+            for (int y = 0; y < arrows[0].length; y++) {
+                for (int z = 0; z < arrows[0][0].length; z++) {
+                    Vector3 newPos = new Vector3(boundingBox[0]-.25f + xGap*x, boundingBox[2]-.25f + yGap*y, boundingBox[4]-.25f + zGap*z);
+                    arrows[x][y][z].updatePosition(newPos, p);
+                }
+            }
+        }
+    }
+
+    private void updateDirection(Particle p) {
+        for (int x = 0; x < arrows.length; x++) {
+            for (int y = 0; y < arrows[0].length; y++) {
+                for (int z = 0; z < arrows[0][0].length; z++) {
+                    arrows[x][y][z].updateDirection(p);
+                }
+            }
+        }
     }
 }

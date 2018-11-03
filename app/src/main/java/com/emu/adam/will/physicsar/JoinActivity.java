@@ -156,14 +156,27 @@ public class JoinActivity extends AppCompatActivity {
                 if(dataSnapshot.hasChild("anchor")) {
                     cloudAnchorID = (String) dataSnapshot.child("anchor").getValue();
                     resolveAnchor();
+
+//                    if (dataSnapshot.child("particles").hasChildren()) {
+//                        for (DataSnapshot child : dataSnapshot.child("particles").getChildren()) {
+//                            createParticle(child);
+//                        }
+//                    }
                 } else {
                     groupReference.addChildEventListener(new ChildEventListener() {
                         @Override
                         public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                             if(dataSnapshot.hasChild("anchor")) {
+                                Log.i("CHECK_DOWN", "child added of group");
                                 cloudAnchorID = (String) dataSnapshot.child("anchor").getValue();
                                 resolveAnchor();
                             }
+
+//                            if (dataSnapshot.child("particles").hasChildren()) {
+//                                for (DataSnapshot child : dataSnapshot.child("particles").getChildren()) {
+//                                    createParticle(child);
+//                                }
+//                            }
                         }
 
                         @Override
@@ -194,31 +207,49 @@ public class JoinActivity extends AppCompatActivity {
             }
         });
 
+
+    }
+
+
+    private void resolveAnchor() {
+        Log.i("CHECK_UP", "About to resolve anchor");
+        anchor = session.resolveCloudAnchor(cloudAnchorID);
+        Log.i("CHECK_UP", "Resolved");
+        anchorNode = new AnchorNode(anchor);
+        anchorNode.setParent(arFragment.getArSceneView().getScene());
+        anchorNode.setRenderable(anchorRenderable);
+        Log.i("CHECK_UP", "Rendered");
+        //appAnchorState = AppAnchorState.RESOLVING;
+
+
+
         groupReference.child("particles").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 //Create particle here
-                Node sphere = new Node();
-                sphere.setParent(anchorNode);
-                sphere.setLocalPosition(new Vector3(Float.valueOf(dataSnapshot.child("x").getValue().toString()), Float.valueOf(dataSnapshot.child("y").getValue().toString()), Float.valueOf(dataSnapshot.child("z").getValue().toString())));
-                sphere.setRenderable(whiteSphereRenderable);
-
-                // Create arrow node
-                Node arrow = new Node();
-                arrow.setParent(sphere);
-                arrow.setRenderable(arrowRenderable);
-                arrow.setLocalPosition(new Vector3(0f, 0f, 0f));
-                arrow.setEnabled(false);
-
-
-                particles.add(new Particle(sphere, 0f, particleControlsRenderable, arrow, redSphereRenderable, whiteSphereRenderable, blueSphereRenderable, Integer.valueOf(dataSnapshot.getKey())));
-                particles.get(particles.size()-1).setCharge(Float.valueOf(dataSnapshot.child("c").getValue().toString()));
+                Log.e("CHECK_UP", "About to create particle");
+                createParticle(dataSnapshot);
+                calculateNetForces(particles);
 
             }
 
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                Log.i("CHECK_UP", dataSnapshot.getKey());
+                Log.i("CHECK_DOWN", dataSnapshot.getKey());
+                Log.i("CHECK_DOWN", " "+dataSnapshot.child("c").getValue().toString());
+                Log.i("CHECK_DOWN", " "+dataSnapshot.child("y").getValue().toString());
+
+                int num = Integer.valueOf(dataSnapshot.getKey());
+                Log.i("CHECK_DOWN", "---"+String.valueOf(particles.size()));
+                Particle p = particles.get(num);
+                p.setCharge(Float.valueOf(dataSnapshot.child("c").getValue().toString()));
+                Log.i("CHECK_DOWN", " charge "+String.valueOf(p.getCharge()));
+                Node sphere = p.getParticle();
+                Vector3 pos = sphere.getLocalPosition();
+                sphere.setLocalPosition(new Vector3(pos.x, Float.valueOf(dataSnapshot.child("y").getValue().toString()), pos.z));
+                calculateNetForces(particles);
+
+
             }
 
             @Override
@@ -239,18 +270,6 @@ public class JoinActivity extends AppCompatActivity {
     }
 
 
-    private void resolveAnchor() {
-        Log.i("CHECK_UP", "About to resolve anchor");
-        anchor = session.resolveCloudAnchor(cloudAnchorID);
-        Log.i("CHECK_UP", "Resolved");
-        anchorNode = new AnchorNode(anchor);
-        anchorNode.setParent(arFragment.getArSceneView().getScene());
-        anchorNode.setRenderable(anchorRenderable);
-        Log.i("CHECK_UP", "Rendered");
-        //appAnchorState = AppAnchorState.RESOLVING;
-    }
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -259,6 +278,61 @@ public class JoinActivity extends AppCompatActivity {
         config.setCloudAnchorMode(Config.CloudAnchorMode.ENABLED);
         session.configure(config);
         arFragment.getArSceneView().setupSession(session);
+    }
+
+    private void createParticle(DataSnapshot dataSnapshot) {
+
+        Node sphere = new Node();
+        sphere.setParent(anchorNode);
+        sphere.setLocalPosition(new Vector3(Float.valueOf(dataSnapshot.child("x").getValue().toString()), Float.valueOf(dataSnapshot.child("y").getValue().toString()), Float.valueOf(dataSnapshot.child("z").getValue().toString())));
+        sphere.setRenderable(whiteSphereRenderable);
+        Log.e("CHECK_UP", "Rendered sphere");
+
+        // Create arrow node
+        Node arrow = new Node();
+        arrow.setParent(sphere);
+        arrow.setRenderable(arrowRenderable);
+        arrow.setLocalPosition(new Vector3(0f, 0f, 0f));
+        arrow.setEnabled(false);
+        Log.e("CHECK_UP", "rendered arrow" + particles.size());
+
+        // Create particle controls menu
+        Node particleControls = new Node();
+        particleControls.setParent(sphere);
+        particleControls.setRenderable(particleControlsRenderable);
+        particleControls.setLocalPosition(new Vector3(0.0f, 0.1f, 0.0f));
+
+
+        particles.add(new Particle(sphere, 0f, particleControlsRenderable, arrow, redSphereRenderable, whiteSphereRenderable, blueSphereRenderable, Integer.valueOf(dataSnapshot.getKey())));
+        particles.get(particles.size()-1).setCharge(Float.valueOf(dataSnapshot.child("c").getValue().toString()));
+
+
+        ViewRenderable.builder()
+                .setView(this, R.layout.particle_controls)
+                .build()
+                .thenAccept(renderable -> particleControlsRenderable = renderable);
+    }
+
+
+
+    private static void calculateNetForces(List<Particle> particles) {
+        for(int i = 0; i < particles.size(); i++) {
+            Vector3 netForce = new Vector3();
+            Particle source = particles.get(i);
+            Vector3 sourcePosition = source.getParticle().getLocalPosition();
+            for(int j = 0; j < particles.size(); j++) {
+                if(i != j) {
+                    Particle other = particles.get(j);
+                    Vector3 otherPosition = other.getParticle().getLocalPosition();
+                    Vector3 direction = Vector3.subtract(sourcePosition, otherPosition);
+                    float r = direction.length();
+                    direction.normalized();
+                    Vector3 force = direction.scaled((source.getCharge() * other.getCharge()) / (r * r));
+                    netForce = Vector3.add(netForce, force);
+                }
+            }
+            source.setForce(netForce);
+        }
     }
 
 

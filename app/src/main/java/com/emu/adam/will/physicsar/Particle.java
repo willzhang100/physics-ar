@@ -67,7 +67,7 @@ public class Particle {
         if (force.length() > 0) {
             arrow.setEnabled(true);
             arrow.setLocalRotation(Quaternion.lookRotation(force, Vector3.cross(force, new Vector3(0, 1, 0))));
-            arrow.setLocalScale(new Vector3(1, 1, 0.01f * force.length()));
+            arrow.setLocalScale(new Vector3(1, 1, 0.005f * force.length()));
         }
         else {
             arrow.setEnabled(false);

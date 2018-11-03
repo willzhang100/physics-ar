@@ -4,29 +4,33 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#1F2833"
     tools:context=".MainActivity">
 
-    <Button
+    <Button style="@style/Widget.AppCompat.Button.Colored"
         android:id="@+id/host_button"
-        android:layout_width="243dp"
-        android:layout_height="41dp"
-        android:layout_marginTop="504dp"
-        android:layout_marginEnd="84dp"
+        android:layout_width="120dp"
+        android:layout_height="60dp"
+        android:layout_marginBottom="160dp"
+        android:background="#45A29E"
         android:text="@string/host_btn_label"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/join_button"
-        android:layout_width="243dp"
-        android:layout_height="41dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="84dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/join_btn_label"
+        android:textSize="24dp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/host_button"
-        app:layout_constraintVertical_bias="0.04" />
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button style="@style/Widget.AppCompat.Button.Colored"
+        android:id="@+id/join_button"
+        android:layout_width="120dp"
+        android:layout_height="60dp"
+        android:layout_marginBottom="60dp"
+        android:background="#45A29E"
+        android:text="@string/join_btn_label"
+        android:textSize="24dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
 
 </android.support.constraint.ConstraintLayout>
